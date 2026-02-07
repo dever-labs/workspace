@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xauth \
     # RDP server
     xrdp xorgxrdp \
+    tigervnc-standalone-server tigervnc-common \
     rsyslog \
     # System utilities
     procps iproute2 net-tools \
@@ -122,15 +123,16 @@ RUN set -eux; \
 # - keep the working IPv4 workaround: port=tcp://:3389
 # - INFO level logging (DEBUG if needed for troubleshooting)
 # - Enable drive redirection for file sharing
-# - Fix Xorg session configuration
+# - Configure Xvnc as default (more stable than Xorg in containers)
 RUN set -eux; \
     sed -ri 's|^port=.*|port=tcp://:3389|' /etc/xrdp/xrdp.ini; \
     sed -ri '/^address=/d' /etc/xrdp/xrdp.ini; \
     sed -ri 's/^LogLevel=.*/LogLevel=INFO/' /etc/xrdp/xrdp.ini || true; \
-    # Fix [Xorg] section - set port=-1 for Unix socket (not TCP)
-    sed -i '/^\[Xorg\]/,/^\[/{/^port=/d}' /etc/xrdp/xrdp.ini; \
-    sed -i '/^\[Xorg\]/a port=-1' /etc/xrdp/xrdp.ini; \
-    sed -i '/^\[Xorg\]/,/^\[/{s/^ip=.*/ip=127.0.0.1/}' /etc/xrdp/xrdp.ini; \
+    # Reorder sessions: Remove existing Xorg and Xvnc sections, then add Xvnc first (as default)
+    sed -i '/^\[Xorg\]/,$ d' /etc/xrdp/xrdp.ini; \
+    # Add Xvnc as first/default session, then Xorg as fallback
+    printf '\n[Xvnc]\nname=Xvnc\nlib=libvnc.so\nusername=ask\npassword=ask\nip=127.0.0.1\nport=-1\n\n' >> /etc/xrdp/xrdp.ini; \
+    printf '[Xorg]\nname=Xorg\nlib=libxup.so\nusername=ask\npassword=ask\nport=-1\nip=127.0.0.1\n' >> /etc/xrdp/xrdp.ini; \
     # Enable drive redirection for mounting Windows drives
     sed -ri 's/^; FuseMountName=.*/FuseMountName=thinclient_drives/' /etc/xrdp/sesman.ini || \
       printf '\nFuseMountName=thinclient_drives\n' >> /etc/xrdp/sesman.ini; \
