@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # System utilities
     procps iproute2 net-tools \
     software-properties-common apt-transport-https \
+    dos2unix \
     tini \
  && locale-gen en_US.UTF-8 \
  && update-ca-certificates \
@@ -121,10 +122,15 @@ RUN set -eux; \
 # - keep the working IPv4 workaround: port=tcp://:3389
 # - INFO level logging (DEBUG if needed for troubleshooting)
 # - Enable drive redirection for file sharing
+# - Fix Xorg session configuration
 RUN set -eux; \
     sed -ri 's|^port=.*|port=tcp://:3389|' /etc/xrdp/xrdp.ini; \
     sed -ri '/^address=/d' /etc/xrdp/xrdp.ini; \
     sed -ri 's/^LogLevel=.*/LogLevel=INFO/' /etc/xrdp/xrdp.ini || true; \
+    # Fix [Xorg] section - set port=-1 for Unix socket (not TCP)
+    sed -i '/^\[Xorg\]/,/^\[/{/^port=/d}' /etc/xrdp/xrdp.ini; \
+    sed -i '/^\[Xorg\]/a port=-1' /etc/xrdp/xrdp.ini; \
+    sed -i '/^\[Xorg\]/,/^\[/{s/^ip=.*/ip=127.0.0.1/}' /etc/xrdp/xrdp.ini; \
     # Enable drive redirection for mounting Windows drives
     sed -ri 's/^; FuseMountName=.*/FuseMountName=thinclient_drives/' /etc/xrdp/sesman.ini || \
       printf '\nFuseMountName=thinclient_drives\n' >> /etc/xrdp/sesman.ini; \
@@ -151,25 +157,64 @@ RUN mkdir -p /run/sshd \
  && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config \
  && sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
-# startwm: predictable XFCE startup
+# startwm: predictable XFCE startup with better error handling
 RUN cat > /etc/xrdp/startwm.sh <<'EOF'
 #!/bin/sh
+# Session startup script for xrdp
+
+# Set up environment
 export XDG_SESSION_DESKTOP=xfce
 export XDG_CURRENT_DESKTOP=XFCE
 export DESKTOP_SESSION=xfce
+export XDG_DATA_DIRS=/usr/share/xfce4:/usr/local/share:/usr/share:/var/lib/snapd/desktop
+export XDG_CONFIG_DIRS=/etc/xdg
 
-# User session dbus helps XFCE in headless/container environments
-if command -v dbus-launch >/dev/null 2>&1; then
-  eval "$(dbus-launch --sh-syntax)" >/dev/null 2>&1
+# Logging
+exec > /tmp/startwm-$USER.log 2>&1
+echo "Starting XFCE session for $USER at $(date)"
+echo "HOME=$HOME"
+echo "DISPLAY=$DISPLAY"
+
+# Start dbus if not running
+if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
+  if command -v dbus-launch >/dev/null 2>&1; then
+    echo "Starting dbus-launch"
+    eval "$(dbus-launch --sh-syntax --exit-with-session)"
+    export DBUS_SESSION_BUS_ADDRESS
+  fi
 fi
 
+# Create required directories
+mkdir -p "$HOME/.config" "$HOME/.cache" "$HOME/.local/share"
+
+# Start XFCE
+echo "Launching startxfce4"
 exec startxfce4
 EOF
 
 RUN chmod +x /etc/xrdp/startwm.sh
 
+# Fix line endings (in case of Windows development environment)
+RUN sed -i 's/\r$//' /etc/xrdp/startwm.sh
+
+# Additional xrdp session configuration
+RUN set -eux; \
+    # Ensure xrdp-sesman can create sessions
+    sed -ri 's/^;?AutoLogon=.*/AutoLogon=false/' /etc/xrdp/sesman.ini; \
+    sed -ri 's/^;?MaxSessions=.*/MaxSessions=10/' /etc/xrdp/sesman.ini; \
+    # Make sesman listen on all interfaces (0.0.0.0) to avoid IPv4/IPv6 issues
+    if grep -q '^ListenAddress=' /etc/xrdp/sesman.ini; then \
+      sed -ri 's/^ListenAddress=.*/ListenAddress=0.0.0.0/' /etc/xrdp/sesman.ini; \
+    else \
+      sed -i '/^ListenPort=3350/a ListenAddress=0.0.0.0' /etc/xrdp/sesman.ini; \
+    fi; \
+    # Set session types
+    if ! grep -q '\[Xorg\]' /etc/xrdp/sesman.ini; then \
+      printf '\n[Xorg]\nparam=xrdp\n' >> /etc/xrdp/sesman.ini; \
+    fi
+
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN chmod +x /entrypoint.sh && sed -i 's/\r$//' /entrypoint.sh
 
 # Create custom startup directory for user scripts
 RUN mkdir -p /etc/container-startup.d /home/dev/.config

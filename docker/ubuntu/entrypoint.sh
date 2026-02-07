@@ -46,9 +46,13 @@ fi
 
 # Runtime dirs required
 log "Setting up runtime directories..."
-mkdir -p /tmp/.X11-unix /run/dbus /var/run/xrdp /var/run/xrdp/sockdir
+mkdir -p /tmp/.X11-unix /run/dbus /var/run/xrdp /var/run/xrdp/sockdir /run/xrdp
 chmod 1777 /tmp/.X11-unix
-chmod 0755 /run/dbus /var/run/xrdp /var/run/xrdp/sockdir
+chmod 0755 /run/dbus /var/run/xrdp /var/run/xrdp/sockdir /run/xrdp
+
+# Additional directories for session management
+mkdir -p /var/run/xrdp/sessions
+chmod 0755 /var/run/xrdp/sessions
 
 # Setup home directory
 HOME_DIR="$(getent passwd "${USERNAME}" | cut -d: -f6)"
@@ -65,7 +69,14 @@ mkdir -p "${HOME_DIR}/.ssh" \
          "${HOME_DIR}/.config" \
          "${HOME_DIR}/.local/bin" \
          "${HOME_DIR}/workspace" \
-         "${HOME_DIR}/.cache"
+         "${HOME_DIR}/.cache" \
+         "${HOME_DIR}/.local/share"
+
+# Ensure .xsession-errors is writable for debugging
+touch "${HOME_DIR}/.xsession-errors"
+
+# Ensure proper Xauthority setup
+touch "${HOME_DIR}/.Xauthority"
 
 # Configure git if credentials provided
 if [ -n "${GIT_USER_NAME:-}" ]; then
@@ -154,7 +165,8 @@ log "Starting xrdp-sesman..."
 ( /usr/sbin/xrdp-sesman --nodaemon 2>&1 | stdbuf -oL -eL tee -a /var/log/xrdp-sesman.console.log ) &
 SESMAN_PID=$!
 
-sleep 1
+# Give sesman more time to fully initialize
+sleep 2
 
 # Verify sesman is running
 if ! kill -0 ${SESMAN_PID} 2>/dev/null; then
@@ -164,7 +176,24 @@ if ! kill -0 ${SESMAN_PID} 2>/dev/null; then
 fi
 
 log "xrdp-sesman started (PID: ${SESMAN_PID})"
-log "Listening on port 3350: $(ss -tulpn 2>/dev/null | grep ':3350' || echo 'checking...')"
+
+# Wait for sesman to be ready on port 3350
+MAX_WAIT=10
+COUNTER=0
+while [ $COUNTER -lt $MAX_WAIT ]; do
+  if ss -tulpn 2>/dev/null | grep -q ':3350'; then
+    log "xrdp-sesman is listening on port 3350"
+    break
+  fi
+  COUNTER=$((COUNTER + 1))
+  sleep 1
+done
+
+if [ $COUNTER -eq $MAX_WAIT ]; then
+  warn "xrdp-sesman may not be listening on port 3350"
+fi
+
+log "Socket status: $(ss -tulpn 2>/dev/null | grep ':3350' || echo 'port 3350 not found')"
 
 # Start xrdp main daemon
 log "Starting xrdp daemon..."
