@@ -1,0 +1,33 @@
+# Ignore version control
+.git
+.gitignore
+.gitattributes
+
+# Ignore documentation (except what's needed in container)
+*.md
+!README.md
+
+# Ignore environment files
+.env
+.env.*
+!.env.example
+
+# Ignore IDE files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Ignore logs
+*.log
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Ignore build artifacts
+*.tar
+*.zip
+workspace/

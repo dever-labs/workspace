@@ -1,0 +1,28 @@
+# Environment files - DO NOT COMMIT PASSWORDS!
+.env
+
+# Workspace directory (user's projects)
+workspace/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker volumes
+volumes/
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
