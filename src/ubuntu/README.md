@@ -40,8 +40,6 @@ docker compose up -d
 
 Connect via RDP: `localhost:3389` (user: `dev`, password: `dev`)
 
----
-
 ## Deployment Options
 
 ### 1. Local Development (Docker Desktop)
@@ -61,8 +59,6 @@ ssh -p 2222 dev@localhost  # SSH
 **Files used:**
 - `compose.yaml` - Base configuration
 - `compose.override.yaml` - Local overrides (GPU, Docker socket)
-
----
 
 ### 2. Remote VM (Docker Engine)
 
@@ -84,8 +80,6 @@ docker --context remote compose -f compose.yaml -f compose.remote.yaml up -d
 **Files used:**
 - `compose.yaml` - Base configuration
 - `compose.remote.yaml` - Remote-specific settings (isolated Docker-in-Docker)
-
----
 
 ### 3. Kubernetes
 
@@ -301,8 +295,6 @@ docker run --rm -v dev-home:/data -v $(pwd):/backup alpine \
   sh -c "cd /data && tar xzf /backup/home-backup.tar.gz"
 ```
 
----
-
 ## Troubleshooting
 
 ### GPU not detected
@@ -344,8 +336,6 @@ docker compose logs -f
 - Configure firewall to allow only VPN access
 - Never expose RDP/SSH directly to internet
 
----
-
 ## Security
 
 ### Best Practices
@@ -370,28 +360,6 @@ sudo ufw allow from 10.10.0.0/24 to any port 47984:47990 proto tcp
 sudo ufw enable
 ```
 
----
-
-## File Structure
-
-```
-.
-├── Dockerfile                  # Container image definition
-├── entrypoint.sh              # Container startup script
-├── compose.yaml               # Base Docker Compose config
-├── compose.override.yaml      # Local development overrides  
-├── compose.remote.yaml        # Remote VM configuration
-├── k8s/
-│   └── devworkstation.yaml    # Kubernetes manifests
-├── start.sh / start.ps1       # Quick start scripts
-├── deploy-remote.sh           # Remote deployment script
-├── SUNSHINE_SETUP.md          # Sunshine/Moonlight guide
-├── README.md                  # This file
-└── .env.example               # Example configuration
-```
-
----
-
 ## Performance Comparison
 
 | Method | Latency | Smoothness | Complexity |
@@ -402,18 +370,6 @@ sudo ufw enable
 | VNC | 100-200ms | ⭐⭐ | Easy |
 
 **Recommendation:** Use Sunshine/Moonlight for best experience with remote workstations.
-
----
-
-## Contributing
-
-Issues and pull requests welcome!
-
-## License
-
-MIT License - Use freely for personal or commercial projects.
-
----
 
 ## FAQ
 
@@ -435,14 +391,8 @@ A: Yes! Use different container names in compose or deploy multiple K8s Stateful
 **Q: Does this bypass antivirus/DLP?**
 A: It isolates your development environment. What you do in the container is isolated from the host.
 
----
+## **Documentation:** 
 
-## Support
-
-- **Documentation:** See [SUNSHINE_SETUP.md](SUNSHINE_SETUP.md) for Sunshine/Moonlight setup
-- **Issues:** Open GitHub issue
-- **Discussions:** GitHub Discussions
-
----
+- [SUNSHINE_SETUP.md](SUNSHINE_SETUP.md) for Sunshine/Moonlight setup
 
 **Built to Free Developers from IT Restrictions** 🚀
