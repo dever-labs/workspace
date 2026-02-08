@@ -308,6 +308,8 @@ Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on:
 - Development setup and guidelines
 - Pull request process
 
+Please also review our [Code of Conduct](CODE_OF_CONDUCT.md) - we are committed to providing a welcoming and inclusive environment for all contributors.
+
 Issues and pull requests are welcome!
 
 ---
