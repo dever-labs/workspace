@@ -57,6 +57,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && apt-get install -y docker-ce-cli docker-compose-plugin \
  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Install browsers
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  firefox \
+ && install -m 0755 -d /etc/apt/keyrings \
+ && curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg \
+ && chmod a+r /etc/apt/keyrings/google-chrome.gpg \
+ && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends google-chrome-stable \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Install Python development tools
 RUN pip3 install --no-cache-dir --break-system-packages --ignore-installed \
     pipenv poetry black pylint mypy ipython
