@@ -1,6 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Container entrypoint for Developer Workstation
+# 
+# Remote Access Options:
+#   1. RDP (xrdp) - Built-in, works from Windows. Moderate latency (50-150ms)
+#      Set ENABLE_RDP=true (default)
+#   
+#   2. X2Go - Better performance than RDP (10-30ms)
+#      Set ENABLE_X2GO=true and ENABLE_SSH=true
+#      Connect with X2Go client to SSH port, session type: XFCE
+#   
+#   3. Sunshine/Moonlight - Best performance (5-15ms, 60 FPS)
+#      Install Sunshine on HOST/VM, not in container
+#      Sunshine captures the container's display output
+#      See SUNSHINE_SETUP.md for complete setup guide
+#      Can disable RDP to save resources: ENABLE_RDP=false
+
 # Logging function with timestamp
 log() { echo "[$(date -Is)] $*"; }
 warn() { echo "[$(date -Is)] WARNING: $*" >&2; }
@@ -12,11 +28,17 @@ PASSWORD="${PASSWORD:-dev}"
 USER_UID="${USER_UID:-}"
 USER_GID="${USER_GID:-}"
 ENABLE_SSH="${ENABLE_SSH:-false}"
+ENABLE_RDP="${ENABLE_RDP:-true}"       # Set to false if using Sunshine/Moonlight only
+ENABLE_X2GO="${ENABLE_X2GO:-false}"    # Better performance than RDP
+ENABLE_SUNSHINE="${ENABLE_SUNSHINE:-false}"  # GPU-accelerated streaming (best performance)
 TIMEZONE="${TZ:-Etc/UTC}"
 
 log "=== Starting Development Container ==="
 log "Username: ${USERNAME}"
 log "Enable SSH: ${ENABLE_SSH}"
+log "Enable RDP: ${ENABLE_RDP}"
+log "Enable X2Go: ${ENABLE_X2GO}"
+log "Enable Sunshine: ${ENABLE_SUNSHINE}"
 log "Timezone: ${TIMEZONE}"
 
 # Validate user exists
@@ -105,14 +127,113 @@ log "Home directory permissions updated"
 log "Starting system services..."
 service rsyslog start >/dev/null 2>&1 || warn "rsyslog failed to start"
 service dbus start >/dev/null 2>&1 || warn "dbus failed to start"
-log "rsyslog + dbus started"
+service avahi-daemon start >/dev/null 2>&1 || warn "avahi-daemon failed to start"
+log "rsyslog + dbus + avahi started"
 
-# Start SSH server if enabled
-if [ "${ENABLE_SSH}" = "true" ]; then
+# Start SSH server if enabled (required for X2Go)
+if [ "${ENABLE_SSH}" = "true" ] || [ "${ENABLE_X2GO}" = "true" ]; then
   log "Starting SSH server..."
   service ssh start >/dev/null 2>&1 || warn "SSH failed to start"
   log "SSH server started on port 22"
 fi
+
+# Start X2Go server if enabled (better performance than RDP)
+if [ "${ENABLE_X2GO}" = "true" ]; then
+  log "X2Go enabled - connect via X2Go client to SSH port 22"
+fi
+
+# Start Sunshine streaming server if enabled
+if [ "${ENABLE_SUNSHINE}" = "true" ]; then
+  log "Starting Sunshine streaming server..."
+  
+  # Start a virtual X server for Sunshine to capture
+  # With GPU encoding (NVENC), you can use higher resolutions like 5120x1440
+  # Without GPU, use 1920x1080 for smooth software encoding
+  XVFB_RESOLUTION="${SUNSHINE_RESOLUTION:-5120x1440x24}"
+  log "Starting Xvfb on DISPLAY=:10 with resolution ${XVFB_RESOLUTION}..."
+  Xvfb :10 -screen 0 ${XVFB_RESOLUTION} +extension GLX +render -noreset &
+  XVFB_PID=$!
+  sleep 2
+  
+  # Verify Xvfb is running
+  if ! kill -0 ${XVFB_PID} 2>/dev/null; then
+    warn "Xvfb failed to start - Sunshine may not work"
+  else
+    log "Xvfb started (PID: ${XVFB_PID}) on DISPLAY=:10"
+  fi
+  
+  # Start XFCE desktop on the virtual display
+  sudo -u "${USERNAME}" DISPLAY=:10 startxfce4 &
+  sleep 3
+  log "XFCE desktop started on virtual display"
+  
+  # Load uinput kernel module (for virtual input devices)
+  if [ -e /dev/uinput ]; then
+    chmod 666 /dev/uinput 2>/dev/null || warn "Could not set uinput permissions"
+    log "uinput device configured"
+  else
+    warn "uinput device not available - will use XTest fallback"
+  fi
+  
+  # Create Sunshine config directory
+  mkdir -p "${HOME_DIR}/.config/sunshine"
+  
+  # Create basic Sunshine configuration if it doesn't exist
+  if [ ! -f "${HOME_DIR}/.config/sunshine/sunshine.conf" ]; then
+    # Auto-detect encoder: nvenc (GPU) or x264 (software fallback)
+    ENCODER="software"
+    if [ -e /dev/dri/renderD128 ] && [ -e /dev/dri/card0 ]; then
+      log "GPU devices detected, will try hardware encoding"
+      ENCODER="nvenc"
+    fi
+    
+    cat > "${HOME_DIR}/.config/sunshine/sunshine.conf" <<SUNEOF
+{
+  "sunshine_name": "DevWorkstation",
+  "output_name": 0,
+  "origin_pin_allowed": "pc",
+  "origin_web_ui_allowed": "pc",
+  "address_family": "ipv4",
+  "ping_timeout": 60000,
+  "channels": 2,
+  "fps": [30, 60, 120],
+  "resolutions": [
+    "1920x1080",
+    "2560x1440",
+    "3440x1440",
+    "5120x1440"
+  ],
+  "min_log_level": 2,
+  "encoder": "${ENCODER}",
+  "sw_preset": "ultrafast",
+  "pkey": "/home/dev/.config/sunshine/credentials/cakey.pem",
+  "cert": "/home/dev/.config/sunshine/credentials/cacert.pem"
+}
+SUNEOF
+    chown -R "${USERNAME}:${USERNAME}" "${HOME_DIR}/.config/sunshine"
+    log "Created default Sunshine configuration (encoder: ${ENCODER})"
+  fi
+  
+  # Start Sunshine as the dev user
+  log "Starting Sunshine with console logging enabled..."
+  sudo -u "${USERNAME}" DISPLAY=:10 sunshine &
+  SUNSHINE_PID=$!
+  log "Sunshine started (PID: ${SUNSHINE_PID})"
+  
+  # Tail the Sunshine log file to Docker console with [sunshine] prefix
+  # Wait for log file to be created
+  sleep 2
+  if [ -f "${HOME_DIR}/.config/sunshine/sunshine.log" ]; then
+    sudo -u "${USERNAME}" tail -f "${HOME_DIR}/.config/sunshine/sunshine.log" 2>/dev/null | sed 's/^/[sunshine] /' &
+    log "Sunshine log streaming to console enabled"
+  fi
+  
+  log "Sunshine web UI: https://localhost:47990"
+  log "Connect with Moonlight client to this container's IP"
+  log "Sunshine logs will appear in 'docker logs devworkstation'"
+fi
+
+log "Session type: XFCE"
 
 # Run custom startup scripts if present
 if [ -d /etc/container-startup.d ]; then
@@ -122,6 +243,15 @@ if [ -d /etc/container-startup.d ]; then
       "$script" || warn "Startup script $(basename "$script") failed"
     fi
   done
+fi
+
+# Skip XRDP startup if disabled (e.g., when using Sunshine/Moonlight streaming)
+if [ "${ENABLE_RDP}" != "true" ]; then
+  log "=== RDP disabled - container running in display-only mode ==="
+  log "Use X2Go or Sunshine/Moonlight for remote access"
+  log "Container will keep running for services..."
+  # Keep container alive
+  tail -f /dev/null
 fi
 
 # Display XRDP configuration for debugging

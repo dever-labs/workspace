@@ -1,0 +1,58 @@
+# compose.remote.yaml - Remote VM deployment
+# Usage: docker compose -f compose.yaml -f compose.remote.yaml up -d
+services:
+  devworkstation:
+    # GPU support for remote VM with NVIDIA GPU
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, compute, utility, graphics]
+    
+    # Input device access for Sunshine virtual input (Linux host only)
+    devices:
+      - /dev/uinput:/dev/uinput:rw
+      - /dev/dri:/dev/dri:rw
+    
+    # Docker-in-Docker via dind service
+    depends_on:
+      - docker-dind
+    environment:
+      - DOCKER_HOST=tcp://docker-dind:2375
+    
+    # Bind to specific interface for WireGuard VPN access
+    ports:
+      - "${WIREGUARD_IP:-0.0.0.0}:3389:3389"
+      - "${WIREGUARD_IP:-0.0.0.0}:2222:22"
+      # Sunshine streaming ports (official Docker documentation ranges)
+      - "${WIREGUARD_IP:-0.0.0.0}:47984-47990:47984-47990/tcp"  # Web UI, HTTPS, HTTP
+      - "${WIREGUARD_IP:-0.0.0.0}:48010:48010"                   # Video/Audio stream
+      - "${WIREGUARD_IP:-0.0.0.0}:47998-48000:47998-48000/udp"  # Control stream
+    
+    # Security: No privileged mode on remote
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+  
+  # Docker-in-Docker service for isolated Docker access
+  docker-dind:
+    image: docker:dind
+    container_name: docker-dind
+    privileged: true
+    environment:
+      - DOCKER_TLS_CERTDIR=
+    volumes:
+      - docker-dind-data:/var/lib/docker
+    networks:
+      - devnet
+
+networks:
+  devnet:
+    driver: bridge
+
+volumes:
+  docker-dind-data:
+    driver: local

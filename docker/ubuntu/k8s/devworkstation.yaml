@@ -1,0 +1,172 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: devworkstations
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: devworkstation-config
+  namespace: devworkstations
+data:
+  TZ: "UTC"
+  ENABLE_SSH: "true"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: devworkstation-secret
+  namespace: devworkstations
+type: Opaque
+stringData:
+  DEV_PASSWORD: "dev"  # Change this in production!
+  GIT_USER_NAME: ""
+  GIT_USER_EMAIL: ""
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: devworkstation
+  namespace: devworkstations
+spec:
+  type: NodePort  # Or LoadBalancer for cloud
+  selector:
+    app: devworkstation
+  ports:
+    - name: rdp
+      port: 3389
+      targetPort: 3389
+      nodePort: 30389  # Accessible at <node-ip>:30389
+    - name: ssh
+      port: 22
+      targetPort: 22
+      nodePort: 30222  # Accessible at <node-ip>:30222
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: devworkstation
+  namespace: devworkstations
+spec:
+  serviceName: devworkstation
+  replicas: 1
+  selector:
+    matchLabels:
+      app: devworkstation
+  template:
+    metadata:
+      labels:
+        app: devworkstation
+    spec:
+      containers:
+      - name: devworkstation
+        image: devworkstation:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: USERNAME
+          value: "dev"
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: devworkstation-secret
+              key: DEV_PASSWORD
+        - name: TZ
+          valueFrom:
+            configMapKeyRef:
+              name: devworkstation-config
+              key: TZ
+        - name: ENABLE_SSH
+          valueFrom:
+            configMapKeyRef:
+              name: devworkstation-config
+              key: ENABLE_SSH
+        - name: GIT_USER_NAME
+          valueFrom:
+            secretKeyRef:
+              name: devworkstation-secret
+              key: GIT_USER_NAME
+        - name: GIT_USER_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: devworkstation-secret
+              key: GIT_USER_EMAIL
+        # GPU support (requires NVIDIA GPU Operator)
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: "all"
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: "all"
+        ports:
+        - containerPort: 3389
+          name: rdp
+        - containerPort: 22
+          name: ssh
+        resources:
+          requests:
+            cpu: "4"
+            memory: "8Gi"
+          limits:
+            cpu: "8"
+            memory: "16Gi"
+            nvidia.com/gpu: "1"  # Request 1 GPU
+        volumeMounts:
+        - name: dev-home
+          mountPath: /home/dev
+        - name: workspace
+          mountPath: /workspace
+        - name: nuget-cache
+          mountPath: /home/dev/.nuget
+        - name: npm-cache
+          mountPath: /home/dev/.npm
+        - name: shm
+          mountPath: /dev/shm
+        securityContext:
+          capabilities:
+            add:
+            - SYS_ADMIN
+        livenessProbe:
+          exec:
+            command:
+            - pgrep
+            - -x
+            - xrdp
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          tcpSocket:
+            port: 3389
+          initialDelaySeconds: 20
+          periodSeconds: 10
+      volumes:
+      - name: shm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 2Gi
+  volumeClaimTemplates:
+  - metadata:
+      name: dev-home
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 50Gi
+  - metadata:
+      name: workspace
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 100Gi
+  - metadata:
+      name: nuget-cache
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+  - metadata:
+      name:npm-cache
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
