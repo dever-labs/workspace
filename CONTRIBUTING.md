@@ -59,7 +59,7 @@ Before suggesting a feature:
 1. **Fork the repository**
    ```bash
    # Click "Fork" on GitHub, then:
-   git clone https://github.com/YOUR-USERNAME/workspace.git
+   git clone https://github.com/dever-labs/workspace.git
    cd workspace
    ```
 
