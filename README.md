@@ -2,6 +2,8 @@
 
 A collection of containerized development environments designed to provide complete, isolated, and portable development workstations. Break free from IT restrictions and work anywhere with consistent tooling.
 
+> Portable, containerized developer workstations with full desktop environments and GPU-accelerated remote access.
+
 ## 🚀 Quick Start
 
 ### Ubuntu Developer Workstation (Recommended)
