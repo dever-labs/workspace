@@ -1,4 +1,4 @@
-# Developer Workstation Container
+# Ubuntu Workspace
 
 A containerized Linux development environment with full desktop (XFCE), optimized for remote access via Sunshine/Moonlight streaming or RDP. Escape IT restrictions by running your entire development stack (JetBrains IDEs, VS Code, Docker, etc.) in an isolated container.
 
