@@ -119,10 +119,16 @@ RUN mkdir -p /run/sshd \
  && sed -i 's/#PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
 # Install Sunshine for GPU-accelerated streaming
-RUN wget -O /tmp/sunshine.deb https://github.com/LizardByte/Sunshine/releases/download/v0.23.1/sunshine-ubuntu-24.04-amd64.deb \
- && apt-get update && apt-get install -y /tmp/sunshine.deb \
- && rm /tmp/sunshine.deb \
- && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN set -e; \
+  wget -O /tmp/sunshine.deb https://github.com/LizardByte/Sunshine/releases/download/v0.23.1/sunshine-ubuntu-24.04-amd64.deb; \
+  apt-get update; \
+  if ! apt-get install -y --no-install-recommends /tmp/sunshine.deb; then \
+    dpkg -i /tmp/sunshine.deb || true; \
+    apt-get -f install -y; \
+  fi; \
+  rm /tmp/sunshine.deb; \
+  apt-get clean; \
+  rm -rf /var/lib/apt/lists/*
 
 # Configure Sunshine defaults
 RUN mkdir -p /home/dev/.config/sunshine \
