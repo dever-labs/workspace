@@ -1,0 +1,88 @@
+# Base compose file - works locally and remotely
+services:
+  devworkstation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: devworkstation:latest
+    container_name: devworkstation
+    hostname: devworkstation
+    
+    # Essential ports
+    ports:
+      - "${RDP_PORT:-3389}:3389"    # RDP
+      - "${SSH_PORT:-2222}:22"       # SSH/X2Go
+      # Sunshine streaming ports (official Docker documentation ranges)
+      - "47984-47990:47984-47990/tcp"  # Web UI, HTTPS, HTTP
+      - "48010:48010"                   # Video/Audio stream
+      - "47998-48000:47998-48000/udp"  # Control stream
+    
+    # Base environment variables
+    environment:
+      - USERNAME=dev
+      - PASSWORD=${DEV_PASSWORD:-dev}
+      - TZ=${TIMEZONE:-UTC}
+      # Remote access options
+      - ENABLE_SSH=${ENABLE_SSH:-true}
+      - ENABLE_RDP=${ENABLE_RDP:-true}     # Set to false when using Sunshine/Moonlight only
+      - ENABLE_X2GO=${ENABLE_X2GO:-false}  # Better performance than RDP (10-30ms latency)
+      - ENABLE_SUNSHINE=${ENABLE_SUNSHINE:-false}  # GPU streaming (5-15ms latency)
+      # GPU support
+      - NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES:-all}
+      - NVIDIA_DRIVER_CAPABILITIES=${NVIDIA_DRIVER_CAPABILITIES:-all}
+      - __GLX_VENDOR_LIBRARY_NAME=${__GLX_VENDOR_LIBRARY_NAME:-nvidia}
+      # Git configuration
+      - GIT_USER_NAME=${GIT_USER_NAME:-}
+      - GIT_USER_EMAIL=${GIT_USER_EMAIL:-}
+    
+    # Persistent volumes
+    volumes:
+      - dev-home:/home/dev
+      - workspace:/workspace
+      # Caches for faster builds
+      - nuget-cache:/home/dev/.nuget
+      - npm-cache:/home/dev/.npm
+      - pip-cache:/home/dev/.cache/pip
+      - cargo-cache:/home/dev/.cargo
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '${CPU_LIMIT:-8}'
+          memory: ${MEMORY_LIMIT:-16G}
+        reservations:
+          cpus: '${CPU_RESERVATION:-4}'
+          memory: ${MEMORY_RESERVATION:-8G}
+    
+    # Shared memory for better application performance
+    shm_size: '2gb'
+    
+    # IPC host mode for MIT-SHM (required for Sunshine performance)
+    # See: https://github.com/jessfraz/dockerfiles/issues/359
+    ipc: host
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Health check (checks xrdp, SSH, or Sunshine depending on what's enabled)
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -x xrdp >/dev/null || pgrep -x sshd >/dev/null || pgrep -x sunshine >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  dev-home:
+    driver: local
+  workspace:
+    driver: local
+  nuget-cache:
+    driver: local
+  npm-cache:
+    driver: local
+  pip-cache:
+    driver: local
+  cargo-cache:
+    driver: local

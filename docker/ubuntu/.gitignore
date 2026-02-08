@@ -1,28 +1,33 @@
-# Environment files - DO NOT COMMIT PASSWORDS!
+# Environment and secrets
 .env
+*.secret
 
-# Workspace directory (user's projects)
-workspace/
-
-# Logs
+# Docker and runtime
+.docker/
 *.log
+*.pid
 
-# OS files
-.DS_Store
-Thumbs.db
-desktop.ini
+# Backups
+*.tar.gz
+*.zip
+backups/
 
-# Editor files
+# IDE and editor files
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# Docker volumes
-volumes/
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
 
 # Temporary files
+tmp/
+temp/
 *.tmp
-*.bak
-*.cache
+
+# Local workspace (optional - uncomment if you don't want to commit local workspace)
+# workspace/

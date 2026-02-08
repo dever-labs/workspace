@@ -1,0 +1,38 @@
+# compose.override.yaml - Local development with Docker Desktop
+# This file is automatically loaded by docker compose
+services:
+  devworkstation:
+    # GPU support for local Docker Desktop (requires NVIDIA Container Toolkit)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, compute, utility, graphics, video]
+    
+    # Docker-in-Docker support (mount host Docker socket)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Optional: Mount SSH keys
+      # - ${HOME}/.ssh:/run/secrets/ssh:ro
+      # Optional: Mount AWS credentials
+      # - ${HOME}/.aws:/home/dev/.aws:ro
+    
+    # Note: /dev/input and /dev/uinput are not available on Windows Docker Desktop
+    # Sunshine will use XTest fallback for input (works but higher latency)
+    # For native input device support, deploy on Linux host
+    
+    # Additional capabilities for Docker-in-Docker
+    cap_add:
+      - SYS_ADMIN
+      - NET_ADMIN
+    
+    # Note: Host network mode doesn't work properly on Windows Docker Desktop
+    # Keeping bridge mode with port mappings
+    # network_mode: host
+    
+    # Custom port mapping for local (no conflicts)
+    ports:
+      - "3389:3389"   # RDP
+      - "2222:22"     # SSH/X2Go
