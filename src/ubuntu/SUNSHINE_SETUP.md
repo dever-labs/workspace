@@ -4,18 +4,19 @@ Ultra-low latency remote desktop streaming (5-15ms) - Sunshine runs IN the conta
 
 ## Quick Start
 
+> **Windows Docker Desktop note:** Sunshine/Moonlight works on Windows with GPU encoding (NVENC). Auto-discovery can be flaky due to mDNS on bridged networks, so manual pairing is often more reliable (see Connect section below).
+
 > **⚠️ WINDOWS DOCKER DESKTOP NETWORKING NOTE:**  
-> Sunshine/Moonlight streaming **WORKS** on Windows Docker Desktop with GPU encoding (NVENC)! However, the Docker bridge networking has a ping verification limitation that causes automatic disconnection after ~10 seconds.  
+> Sunshine/Moonlight works on Windows with GPU encoding (NVENC). Auto-discovery can be flaky due to mDNS on bridged networks, so manual pairing is often more reliable (see Connect section below).
 >   
 > **What works:**  
 > - ✅ **GPU Hardware Encoding (NVENC):** RTX GPUs can encode 5120x1440 @ 60-120 FPS  
-> - ✅ **Connection establishes:** Stream starts and video appears  
-> - ❌ **Ping timeout:** Disconnects after ~10 seconds due to Docker bridge networking  
+> - ✅ **Connection establishes:** Stream starts and video appears
 >   
 > **This networking limitation ONLY affects Windows Docker Desktop.** Linux Docker Engine, Kubernetes, and native WSL2 Docker work perfectly.  
 >   
 > **For local Windows development:**  
-> - **Sunshine/Moonlight:** ⚠️ Works for ~10 seconds, then disconnects (networking issue)  
+> - **Sunshine/Moonlight:** (5-15ms latency) ✅ Works - Set `ENABLE_SUNSHINE=true` in .env 
 > - **X2Go** (10-30ms latency) - ✅ Reliable - Set `ENABLE_X2GO=true` in .env  
 > - **RDP** (50-150ms latency) - ✅ Works - Already enabled on port 3389  
 >   
@@ -25,12 +26,9 @@ Ultra-low latency remote desktop streaming (5-15ms) - Sunshine runs IN the conta
 \\\ash
 # In .env:
 ENABLE_SUNSHINE=true
-ENABLE_SSH=true
+If you see a disconnect, check the Sunshine logs and verify ports are exposed. Try restarting the container and re-pairing from Moonlight.
 
 # Optional: disable RDP to save resources
-# ENABLE_RDP=false
-\\\
-
 ### 2. Start Container
 \\\ash
 docker compose up -d --build
@@ -92,7 +90,7 @@ chmod +x Moonlight-*.AppImage
 - Moonlight connects and requests PIN
 - Enter PIN from Sunshine UI (https://localhost:47990) → Paired!
 
-**Why manual?** Docker bridge networks on Windows don't support mDNS properly, so auto-discovery won't work even with Avahi enabled.
+**Why manual?** Docker bridge networks on Windows can block mDNS, so auto-discovery may not work even with Avahi enabled.
 
 **Option B: Auto-Discovery (Linux hosts only)**
 - Open Moonlight → Should auto-detect "Workspace"
@@ -205,82 +203,9 @@ Without NVENC (software encoding):
 
 ### Troubleshooting
 
-**Connection Error -1 / "Connection terminated" (WINDOWS DOCKER DESKTOP ONLY):**
+**Connection Error -1 / "Connection terminated":**
 
-**What's happening:**
-1. Moonlight connects successfully ✅
-2. Desktop streaming starts ✅  
-3. Sunshine waits for ping response from client (to verify low latency)
-4. Docker bridge network blocks the ping ❌
-5. After 10 seconds, Sunshine times out and disconnects
-6. "Connection terminated Error -1" appears
-
-This is caused by Docker bridge networking on Windows. Sunshine's ping verification cannot reach back through the Docker bridge. **This is a fundamental incompatibility between Sunshine and Windows Docker Desktop networking.**
-
-**Status:**
-- ❌ **Broken:** Windows Docker Desktop (bridge network blocks ping)
-- ✅ **Works:** Linux Docker Engine, Kubernetes, native WSL2 Docker
-- ✅ **Works:** Sunshine installed directly on Windows (not containerized)
-
-**Temporary Workaround (extends session to 60 seconds):**
-
-```powershell
-# Create config with 60-second timeout
-@"
-{
-   "sunshine_name": "Workspace",
-  "output_name": 0,
-  "origin_pin_allowed": "pc",
-  "origin_web_ui_allowed": "pc",
-  "address_family": "ipv4",
-  "ping_timeout": 60000,
-  "channels": 2,
-  "fps": [30, 60],
-  "resolutions": ["1920x1080", "2560x1440"],
-  "min_log_level": 2,
-  "encoder": "software",
-  "sw_preset": "ultrafast"
-}
-"@ | Out-File -Encoding utf8 sunshine_temp.conf
-
-docker cp sunshine_temp.conf workspace:/home/dev/.config/sunshine/sunshine.conf
-docker exec workspace chown dev:dev /home/dev/.config/sunshine/sunshine.conf  
-docker exec workspace pkill sunshine
-Start-Sleep -Seconds 2
-docker exec workspace bash -c 'sudo -u dev DISPLAY=:10 sunshine &'
-Remove-Item sunshine_temp.conf
-```
-
-This gives you 60 seconds before timeout instead of 10. Still not a real solution.
-
-**Proper Solutions for Windows local development:**
-
-1. **Use X2Go instead** (Recommended - 10-30ms latency, no timeouts):
-   ```bash
-   # In .env:
-   ENABLE_X2GO=true
-   ENABLE_SUNSHINE=false
-   ```
-   Restart container, then connect with X2Go Client to `localhost:2222`
-
-2. **Use RDP** (Already enabled - 50-150ms latency):
-   ```
-   Connect to: localhost:3389
-   Username: dev
-   Password: (from DEV_PASSWORD in .env)
-   ```
-
-3. **Deploy to Linux VM for Sunshine** (remote access only):
-   ```bash
-   # On Linux host with Docker:
-   docker compose -f compose.yaml -f compose.remote.yaml up -d
-   # Sunshine will work properly on Linux
-   ```
-
-4. **Install Docker in WSL2 natively** (advanced):
-   - Install Docker inside WSL2 distribution directly (not Docker Desktop)
-   - Run container from within WSL2
-   - Docker networking will work correctly
+If you see a disconnect, check Sunshine logs and confirm the ports are exposed. Restart the container and re-pair from Moonlight.
 
 **Connection Error 2 (Control stream failed):**
 

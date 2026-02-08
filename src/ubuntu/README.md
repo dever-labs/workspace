@@ -111,18 +111,16 @@ mstsc /v:<node-ip>:30389
 - ConfigMap/Secret for configuration
 - NodePort or LoadBalancer service
 
----
-
 ## Architecture
 
 ### Sunshine/Moonlight (Recommended for Remote)
 
 ```
 Laptop                    Remote VM
-┌──────────┐             ┌─────────────────┐
-│Moonlight │◄─WireGuard──│  Sunshine       │
-│Client    │   VPN       │  (GPU encode)   │
-└──────────┘             │      ↓          │
+┌───────────┐             ┌─────────────────┐
+│ Moonlight │◄─WireGuard──│  Sunshine       │
+│ Client    │   VPN       │  (GPU encode)   │
+└───────────┘             │      ↓          │
                           │  Container      │
                           │  +RDP+Desktop   │
                           └─────────────────┘
@@ -134,11 +132,9 @@ Laptop                    Remote VM
 - **Native-feeling** IDE performance  
 - Originally designed for game streaming
 
-> **⚠️ Known Limitation:** Sunshine/Moonlight does **not work** with Docker Desktop on Windows due to bridge networking ping verification issues. Works perfectly on Linux Docker Engine, Kubernetes, and native WSL2 Docker. For local Windows development, use X2Go or RDP instead.
+> **Note:** On Windows Docker Desktop, auto-discovery can be flaky due to mDNS limitations. Use manual pairing in Moonlight if it does not show up automatically.
 
 **Setup Guide:** [SUNSHINE_SETUP.md](SUNSHINE_SETUP.md)
-
----
 
 ## Configuration
 
@@ -194,8 +190,6 @@ Volumes for data persistence:
 - `pip-cache` - Python package cache
 - `cargo-cache` - Rust package cache
 
----
-
 ## Installed Tools
 
 ### Desktop Environment
@@ -220,8 +214,6 @@ Volumes for data persistence:
 - PostgreSQL client
 - MySQL client
 - SQLite3
-
----
 
 ## Common Tasks
 
