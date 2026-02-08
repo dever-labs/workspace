@@ -1,0 +1,32 @@
+FROM ghcr.io/dever/workspace:ubuntu-24.02
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl gnupg lsb-release \
+    libfuse2 libgbm1 libgtk-3-0 libnss3 libxss1 libasound2 \
+ && install -m 0755 -d /etc/apt/keyrings \
+ && curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg \
+ && chmod a+r /etc/apt/keyrings/microsoft.gpg \
+ && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list \
+ && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/ms-teams stable main" > /etc/apt/sources.list.d/teams.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends code teams \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+ARG RIDER_VERSION=2025.3.2
+RUN mkdir -p /opt/rider \
+ && curl -fsSL "https://download.jetbrains.com/rider/JetBrains.Rider-${RIDER_VERSION}.tar.gz" -o /tmp/rider.tar.gz \
+ && tar -xzf /tmp/rider.tar.gz -C /opt/rider --strip-components=1 \
+ && rm /tmp/rider.tar.gz \
+ && ln -sf /opt/rider/bin/rider.sh /usr/local/bin/rider
+
+RUN TOOLBOX_JSON="$(curl -fsSL "https://data.services.jetbrains.com/products/releases?code=TBA&latest=true&type=release")" \
+ && TOOLBOX_URL="$(printf "%s" "$TOOLBOX_JSON" | jq -r '.TBA[0].downloads.linux.link // empty')" \
+ && if [ -z "$TOOLBOX_URL" ]; then echo "Failed to resolve JetBrains Toolbox download URL" >&2; exit 1; fi \
+ && mkdir -p /opt/jetbrains-toolbox \
+ && curl -fsSL "$TOOLBOX_URL" -o /tmp/jetbrains-toolbox.tar.gz \
+ && tar -xzf /tmp/jetbrains-toolbox.tar.gz -C /opt/jetbrains-toolbox --strip-components=1 \
+ && rm /tmp/jetbrains-toolbox.tar.gz \
+ && ln -sf /opt/jetbrains-toolbox/jetbrains-toolbox /usr/local/bin/jetbrains-toolbox
+
