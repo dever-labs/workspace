@@ -1,4 +1,4 @@
-FROM ghcr.io/dever/workspace:ubuntu-24.02
+FROM ghcr.io/dever-labs/workspace:ubuntu-24.02
 
 ENV DEBIAN_FRONTEND=noninteractive
 

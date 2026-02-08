@@ -38,7 +38,7 @@ jobs:
           file: src/ubuntu/Dockerfile
           push: true
           pull: true
-          tags: ghcr.io/dever/workspace:ubuntu-24.02
+          tags: ghcr.io/dever-labs/workspace:ubuntu-24.02
 
   devtools:
     runs-on: ubuntu-latest
@@ -67,4 +67,4 @@ jobs:
           file: src/ubuntu/Dockerfile.devtools
           push: true
           pull: true
-          tags: ghcr.io/dever/workspace:ubuntu-24.02-devtools-0.1
+          tags: ghcr.io/dever-labs/workspace:ubuntu-24.02-devtools-0.1

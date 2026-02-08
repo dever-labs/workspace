@@ -4,12 +4,12 @@
 
 ```powershell
 # 1. Setup
-cd docker\ubuntu
+cd src\ubuntu
 copy .env.example .env
 notepad .env  # Set your password!
 
-# 2. Start (using PowerShell script)
-.\manage.ps1 start
+# 2. Start (quick start script)
+.\start.ps1
 
 # 3. Connect via RDP
 # Open Remote Desktop Connection (Win+R, type: mstsc)
@@ -22,6 +22,7 @@ notepad .env  # Set your password!
 
 ### Using PowerShell Script (Recommended for Windows)
 ```powershell
+.\start.ps1             # Quick start (creates .env if missing)
 .\manage.ps1 start      # Start container
 .\manage.ps1 stop       # Stop container
 .\manage.ps1 logs       # View logs
@@ -32,12 +33,12 @@ notepad .env  # Set your password!
 
 ### Using Docker Compose Directly
 ```powershell
-docker-compose up -d                    # Start
-docker-compose down                     # Stop
-docker-compose logs -f                  # View logs
-docker-compose exec dev-desktop bash    # Shell
-docker-compose ps                       # Status
-docker-compose restart                  # Restart
+docker compose up -d --build            # Start
+docker compose down                     # Stop
+docker compose logs -f                  # View logs
+docker compose exec workspace bash      # Shell
+docker compose ps                       # Status
+docker compose restart                  # Restart
 ```
 
 ## Frequent Tasks
@@ -81,7 +82,7 @@ The Docker CLI is available if you mounted the socket:
 ```bash
 docker ps           # List containers
 docker build .      # Build images
-docker-compose up   # Run compose files
+docker compose up   # Run compose files
 ```
 
 ### Configure Git
@@ -100,7 +101,7 @@ git config --global user.email "your.email@example.com"
 
 ### Add SSH Keys
 
-Method 1 - In docker-compose.yml:
+Method 1 - In `compose.override.yaml`:
 ```yaml
 volumes:
   - C:\Users\YourName\.ssh:/run/secrets/ssh:ro
@@ -108,10 +109,10 @@ volumes:
 
 Method 2 - Copy manually after starting:
 ```powershell
-docker cp C:\Users\YourName\.ssh\id_rsa dev-desktop:/home/dev/.ssh/
-docker cp C:\Users\YourName\.ssh\id_rsa.pub dev-desktop:/home/dev/.ssh/
-docker exec dev-desktop chown -R dev:dev /home/dev/.ssh
-docker exec dev-desktop chmod 600 /home/dev/.ssh/id_rsa
+docker cp C:\Users\YourName\.ssh\id_rsa workspace:/home/dev/.ssh/
+docker cp C:\Users\YourName\.ssh\id_rsa.pub workspace:/home/dev/.ssh/
+docker exec workspace chown -R dev:dev /home/dev/.ssh
+docker exec workspace chmod 600 /home/dev/.ssh/id_rsa
 ```
 
 ### Run Web Development Server
@@ -124,7 +125,7 @@ npm run dev  # or python manage.py runserver, etc.
 
 Access from Windows browser:
 - If server binds to `0.0.0.0`: `http://localhost:<port>`
-- Add port mapping in docker-compose.yml if needed:
+- Add port mapping in `compose.yaml` if needed:
   ```yaml
   ports:
     - "3000:3000"  # Add your port
@@ -163,7 +164,7 @@ sudo chmod +x /etc/container-startup.d/my-script.sh
 ### Can't Connect to RDP
 ```powershell
 # Check container is running
-docker ps | findstr dev-desktop
+docker ps | findstr workspace
 
 # Check logs
 .\manage.ps1 logs
@@ -182,7 +183,7 @@ notepad .env
 ### Container Won't Start
 ```powershell
 # View detailed logs
-docker-compose logs
+docker compose logs
 
 # Try clean rebuild
 .\manage.ps1 rebuild
@@ -240,7 +241,9 @@ Then restart container.
 
 - [Dockerfile](Dockerfile) - Container image definition
 - [entrypoint.sh](entrypoint.sh) - Container startup script
-- [docker-compose.yml](docker-compose.yml) - Deployment configuration
+- [compose.yaml](compose.yaml) - Base deployment configuration
+- [compose.override.yaml](compose.override.yaml) - Local overrides
+- [compose.remote.yaml](compose.remote.yaml) - Remote VM overrides
 - [README.md](README.md) - Full documentation
 - [.env.example](.env.example) - Configuration template
 

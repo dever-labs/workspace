@@ -1,12 +1,12 @@
 # Base compose file - works locally and remotely
 services:
-  devworkstation:
+  workspace:
     build:
       context: .
       dockerfile: Dockerfile
-    image: devworkstation:latest
-    container_name: devworkstation
-    hostname: devworkstation
+    image: ghcr.io/dever-labs/workspace:ubuntu-24.02
+    container_name: workspace
+    hostname: workspace
     
     # Essential ports
     ports:

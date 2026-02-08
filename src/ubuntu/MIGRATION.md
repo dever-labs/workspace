@@ -10,7 +10,7 @@ Your repository has been restructured to support flexible deployment (local, rem
 2. **compose.yaml** - Base Docker Compose configuration
 3. **compose.override.yaml** - Local development overrides
 4. **compose.remote.yaml** - Remote VM configuration
-5. **k8s/devworkstation.yaml** - Kubernetes StatefulSet manifests
+5. **k8s/workspace.yaml** - Kubernetes StatefulSet manifests
 6. **SUNSHINE_SETUP.md** - Complete Sunshine/Moonlight setup guide
 7. **start.sh / start.ps1** - Quick start scripts
 8. **deploy-remote.sh** - Remote deployment script
@@ -129,13 +129,13 @@ docker --context remote compose -f compose.yaml -f compose.remote.yaml up -d
 
 ```bash
 # Deploy
-kubectl apply -f k8s/devworkstation.yaml
+kubectl apply -f k8s/workspace.yaml
 
 # Check status
-kubectl get pods -n devworkstations
+kubectl get pods -n workspace
 
 # Access
-kubectl get svc -n devworkstations
+kubectl get svc -n workspace
 # Connect to <node-ip>:30389
 ```
 
@@ -168,8 +168,7 @@ For near-native performance (5-15ms latency):
 docker-compose down  # Note: dash, not space
 
 # Or force remove
-docker container rm -f devworkstation
-docker container rm -f dev-desktop
+docker container rm -f workspace
 ```
 
 ### Port conflicts
@@ -248,7 +247,7 @@ docker compose down
 docker compose logs -f
 
 # Shell access
-docker compose exec devworkstation bash
+docker compose exec workspace bash
 
 # Restart
 docker compose restart
@@ -263,7 +262,7 @@ make backup  # or see Makefile for manual command
 ./deploy-remote.sh user@remote-vm
 
 # Kubernetes
-kubectl apply -f k8s/devworkstation.yaml
+kubectl apply -f k8s/workspace.yaml
 ```
 
 ---

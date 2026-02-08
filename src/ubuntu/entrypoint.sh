@@ -189,7 +189,7 @@ if [ "${ENABLE_SUNSHINE}" = "true" ]; then
     
     cat > "${HOME_DIR}/.config/sunshine/sunshine.conf" <<SUNEOF
 {
-  "sunshine_name": "DevWorkstation",
+  "sunshine_name": "Workspace",
   "output_name": 0,
   "origin_pin_allowed": "pc",
   "origin_web_ui_allowed": "pc",
@@ -230,7 +230,7 @@ SUNEOF
   
   log "Sunshine web UI: https://localhost:47990"
   log "Connect with Moonlight client to this container's IP"
-  log "Sunshine logs will appear in 'docker logs devworkstation'"
+  log "Sunshine logs will appear in 'docker logs workspace'"
 fi
 
 log "Session type: XFCE"

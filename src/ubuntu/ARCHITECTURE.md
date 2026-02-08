@@ -94,11 +94,15 @@ Windows Docker Desktop ──► Socket Mount ──► Container Docker CLI ─
 ## File Structure
 
 ```
-docker/ubuntu/
+src/ubuntu/
 ├── Dockerfile              # Container image definition
 ├── entrypoint.sh          # Startup script
-├── docker-compose.yml     # Deployment configuration
+├── compose.yaml           # Base deployment configuration
+├── compose.override.yaml  # Local development overrides
+├── compose.remote.yaml    # Remote VM overrides
 ├── .env.example           # Configuration template
+├── start.ps1              # Windows quick start script
+├── start.sh               # Linux/macOS quick start script
 ├── manage.ps1             # Windows management script
 ├── Makefile               # Make commands (optional)
 ├── README.md              # Full documentation
@@ -215,7 +219,7 @@ Recommendations:
 ### Docker-based Development
 ```
 1. Ensure docker.sock is mounted
-2. In container: docker-compose up -d
+2. In container: docker compose up -d
 3. Manage containers from within dev environment
 4. All containers run in host Docker
 ```

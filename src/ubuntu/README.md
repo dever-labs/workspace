@@ -22,6 +22,15 @@ A containerized Linux development environment with full desktop (XFCE), optimize
 
 ### Start Locally (5 minutes)
 
+1. Copy config and set a password:
+
+```bash
+cp .env.example .env
+# Edit .env and set DEV_PASSWORD, TIMEZONE, and other options
+```
+
+> The start scripts will create `.env` automatically if it is missing.
+
 **Windows:**
 ```powershell
 .\start.ps1
@@ -35,10 +44,10 @@ chmod +x start.sh
 
 **Manual:**
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
-Connect via RDP: `localhost:3389` (user: `dev`, password: `dev`)
+Connect via RDP: `localhost:3389` (user: `dev`, password: from `.env`)
 
 ## Deployment Options
 
@@ -87,10 +96,10 @@ Deploy to K8s cluster for enterprise scenarios.
 
 ```bash
 # Deploy
-kubectl apply -f k8s/devworkstation.yaml
+kubectl apply -f k8s/workspace.yaml
 
 # Get access info
-kubectl get svc -n devworkstations
+kubectl get svc -n workspace
 
 # Access via NodePort
 mstsc /v:<node-ip>:30389
@@ -141,6 +150,10 @@ Create `.env` file (see `.env.example`):
 # User credentials
 DEV_PASSWORD=your-secure-password
 
+# Optional UID/GID mapping (match host user)
+USER_UID=1000
+USER_GID=1000
+
 # Timezone
 TIMEZONE=America/New_York
 
@@ -153,6 +166,10 @@ ENABLE_RDP=true        # RDP server (xrdp) for Windows native access
 ENABLE_X2GO=false      # X2Go for better performance (10-30ms)
 ENABLE_SSH=true        # SSH server (required for X2Go)
 ENABLE_SUNSHINE=true   # Sunshine/Moonlight streaming (5-15ms, best performance)
+
+# Port mapping (change if ports are in use)
+RDP_PORT=3389
+SSH_PORT=2222
 
 # Resource limits
 CPU_LIMIT=8
@@ -283,6 +300,8 @@ docker run hello-world
 docker compose up
 ```
 
+**Remote VM:** uses a separate Docker-in-Docker service (see `compose.remote.yaml`).
+
 ### Backup/Restore
 
 ```bash
@@ -304,7 +323,7 @@ docker run --rm -v dev-home:/data -v $(pwd):/backup alpine \
 nvidia-smi
 
 # Check GPU in container
-docker exec devworkstation nvidia-smi
+docker exec workspace nvidia-smi
 
 # Verify Docker GPU support
 docker run --rm --gpus all nvidia/cuda:12.0.0-base-ubuntu22.04 nvidia-smi
@@ -317,7 +336,7 @@ docker run --rm --gpus all nvidia/cuda:12.0.0-base-ubuntu22.04 nvidia-smi
 docker compose ps
 
 # Check xrdp service
-docker exec devworkstation pgrep xrdp
+docker exec workspace pgrep xrdp
 
 # View logs
 docker compose logs -f

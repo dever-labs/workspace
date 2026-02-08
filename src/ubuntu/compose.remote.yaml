@@ -1,7 +1,7 @@
 # compose.remote.yaml - Remote VM deployment
 # Usage: docker compose -f compose.yaml -f compose.remote.yaml up -d
 services:
-  devworkstation:
+  workspace:
     # GPU support for remote VM with NVIDIA GPU
     deploy:
       resources:

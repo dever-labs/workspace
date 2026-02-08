@@ -53,7 +53,7 @@ function Start-Container {
         exit 0
     }
     
-    docker-compose up -d
+    docker compose up -d
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host ""
@@ -68,32 +68,32 @@ function Start-Container {
 
 function Stop-Container {
     Write-Header "Stopping Development Container"
-    docker-compose down
+    docker compose down
     Write-Host "✓ Container stopped" -ForegroundColor Green
 }
 
 function Restart-Container {
     Write-Header "Restarting Development Container"
-    docker-compose restart
+    docker compose restart
     Write-Host "✓ Container restarted" -ForegroundColor Green
 }
 
 function Show-Logs {
     Write-Header "Container Logs (Ctrl+C to exit)"
-    docker-compose logs -f --tail=100
+    docker compose logs -f --tail=100
 }
 
 function Open-Shell {
     Write-Header "Opening Shell in Container"
-    docker-compose exec dev-desktop bash
+    docker compose exec workspace bash
 }
 
 function Show-Status {
     Write-Header "Container Status"
-    docker-compose ps
+    docker compose ps
     Write-Host ""
     
-    $health = docker inspect --format='{{.State.Health.Status}}' dev-desktop 2>$null
+    $health = docker inspect --format='{{.State.Health.Status}}' workspace 2>$null
     if ($health) {
         Write-Host "Health: " -NoNewline
         if ($health -eq "healthy") {
@@ -112,7 +112,7 @@ function Clean-Environment {
     $confirm = Read-Host "Are you sure? Type 'yes' to continue"
     
     if ($confirm -eq 'yes') {
-        docker-compose down -v
+        docker compose down -v
         Write-Host "✓ Environment cleaned" -ForegroundColor Green
     } else {
         Write-Host "Cancelled" -ForegroundColor Yellow
@@ -122,8 +122,8 @@ function Clean-Environment {
 function Rebuild-Container {
     Write-Header "Rebuild Container"
     Write-Host "This will rebuild the container from scratch..." -ForegroundColor Yellow
-    docker-compose build --no-cache
-    docker-compose up -d
+    docker compose build --no-cache
+    docker compose up -d
     Write-Host "✓ Rebuild complete!" -ForegroundColor Green
     Show-RDPInfo
 }

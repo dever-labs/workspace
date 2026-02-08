@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: devworkstations
+  name: workspace
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: devworkstation-config
-  namespace: devworkstations
+  name: workspace-config
+  namespace: workspace
 data:
   TZ: "UTC"
   ENABLE_SSH: "true"
@@ -15,8 +15,8 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: devworkstation-secret
-  namespace: devworkstations
+  name: workspace-secret
+  namespace: workspace
 type: Opaque
 stringData:
   DEV_PASSWORD: "dev"  # Change this in production!
@@ -26,12 +26,12 @@ stringData:
 apiVersion: v1
 kind: Service
 metadata:
-  name: devworkstation
-  namespace: devworkstations
+  name: workspace
+  namespace: workspace
 spec:
   type: NodePort  # Or LoadBalancer for cloud
   selector:
-    app: devworkstation
+    app: workspace
   ports:
     - name: rdp
       port: 3389
@@ -45,22 +45,22 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: devworkstation
-  namespace: devworkstations
+  name: workspace
+  namespace: workspace
 spec:
-  serviceName: devworkstation
+  serviceName: workspace
   replicas: 1
   selector:
     matchLabels:
-      app: devworkstation
+      app: workspace
   template:
     metadata:
       labels:
-        app: devworkstation
+        app: workspace
     spec:
       containers:
-      - name: devworkstation
-        image: devworkstation:latest
+      - name: workspace
+        image: ghcr.io/dever-labs/workspace:ubuntu-24.02
         imagePullPolicy: IfNotPresent
         env:
         - name: USERNAME
@@ -68,27 +68,27 @@ spec:
         - name: PASSWORD
           valueFrom:
             secretKeyRef:
-              name: devworkstation-secret
+              name: workspace-secret
               key: DEV_PASSWORD
         - name: TZ
           valueFrom:
             configMapKeyRef:
-              name: devworkstation-config
+              name: workspace-config
               key: TZ
         - name: ENABLE_SSH
           valueFrom:
             configMapKeyRef:
-              name: devworkstation-config
+              name: workspace-config
               key: ENABLE_SSH
         - name: GIT_USER_NAME
           valueFrom:
             secretKeyRef:
-              name: devworkstation-secret
+              name: workspace-secret
               key: GIT_USER_NAME
         - name: GIT_USER_EMAIL
           valueFrom:
             secretKeyRef:
-              name: devworkstation-secret
+              name: workspace-secret
               key: GIT_USER_EMAIL
         # GPU support (requires NVIDIA GPU Operator)
         - name: NVIDIA_VISIBLE_DEVICES

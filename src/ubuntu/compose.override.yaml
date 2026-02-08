@@ -1,7 +1,7 @@
 # compose.override.yaml - Local development with Docker Desktop
 # This file is automatically loaded by docker compose
 services:
-  devworkstation:
+  workspace:
     # GPU support for local Docker Desktop (requires NVIDIA Container Toolkit)
     deploy:
       resources:

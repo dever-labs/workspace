@@ -95,13 +95,13 @@ chmod +x Moonlight-*.AppImage
 **Why manual?** Docker bridge networks on Windows don't support mDNS properly, so auto-discovery won't work even with Avahi enabled.
 
 **Option B: Auto-Discovery (Linux hosts only)**
-- Open Moonlight → Should auto-detect "DevWorkstation"
+- Open Moonlight → Should auto-detect "Workspace"
 - Requires Avahi daemon running and host network mode
-- Check status: `docker exec devworkstation ps aux | grep avahi`
+- Check status: `docker exec workspace ps aux | grep avahi`
 
 **Find container IP (alternative):**
 ```powershell
-docker inspect devworkstation | Select-String '"IPAddress"'
+docker inspect workspace | Select-String '"IPAddress"'
 ```
 
 See full guide in original SUNSHINE_SETUP.md or README.md
@@ -138,12 +138,12 @@ deploy:
 
 1. **Check GPU is accessible:**
 ```bash
-docker exec devworkstation nvidia-smi
+docker exec workspace nvidia-smi
 ```
 
 2. **Verify NVENC libraries are loaded:**
 ```bash
-docker exec devworkstation bash -c 'ldconfig -p | grep nvidia'
+docker exec workspace bash -c 'ldconfig -p | grep nvidia'
 ```
 
 You should see:
@@ -154,7 +154,7 @@ libnvidia-opticalflow.so.1 (libc6,x86-64) => /usr/lib/x86_64-linux-gnu/libnvidia
 
 3. **Check Sunshine detects NVENC:**
 ```bash
-docker logs devworkstation 2>&1 | grep -i nvenc
+docker logs workspace 2>&1 | grep -i nvenc
 ```
 
 You should see:
@@ -185,7 +185,7 @@ docker compose up -d --build
 
 4. **Check Sunshine config uses nvenc:**
 ```bash
-docker exec devworkstation cat /home/dev/.config/sunshine/sunshine.conf
+docker exec workspace cat /home/dev/.config/sunshine/sunshine.conf
 ```
 
 Should show: `"encoder": "nvenc"`
@@ -228,7 +228,7 @@ This is caused by Docker bridge networking on Windows. Sunshine's ping verificat
 # Create config with 60-second timeout
 @"
 {
-  "sunshine_name": "DevWorkstation",
+   "sunshine_name": "Workspace",
   "output_name": 0,
   "origin_pin_allowed": "pc",
   "origin_web_ui_allowed": "pc",
@@ -243,11 +243,11 @@ This is caused by Docker bridge networking on Windows. Sunshine's ping verificat
 }
 "@ | Out-File -Encoding utf8 sunshine_temp.conf
 
-docker cp sunshine_temp.conf devworkstation:/home/dev/.config/sunshine/sunshine.conf
-docker exec devworkstation chown dev:dev /home/dev/.config/sunshine/sunshine.conf  
-docker exec devworkstation pkill sunshine
+docker cp sunshine_temp.conf workspace:/home/dev/.config/sunshine/sunshine.conf
+docker exec workspace chown dev:dev /home/dev/.config/sunshine/sunshine.conf  
+docker exec workspace pkill sunshine
 Start-Sleep -Seconds 2
-docker exec devworkstation bash -c 'sudo -u dev DISPLAY=:10 sunshine &'
+docker exec workspace bash -c 'sudo -u dev DISPLAY=:10 sunshine &'
 Remove-Item sunshine_temp.conf
 ```
 
@@ -295,18 +295,18 @@ docker compose up -d
 **Monitor connection attempts in real-time:**
 ```powershell
 # Watch logs as you connect
-docker exec devworkstation tail -f /home/dev/.config/sunshine/sunshine.log
+docker exec workspace tail -f /home/dev/.config/sunshine/sunshine.log
 ```
 
 **No encoder found:**
 - Check logs: `docker compose logs | grep -i sunshine`
-- Verify devices mounted: `docker exec devworkstation ls -la /dev/dri`
-- Test GPU: `docker exec devworkstation nvidia-smi`
+- Verify devices mounted: `docker exec workspace ls -la /dev/dri`
+- Test GPU: `docker exec workspace nvidia-smi`
 
 **Input devices not working:**
 - Virtual input (uinput) is configured automatically  
 - XTest fallback works but has higher latency
-- Check permissions: `docker exec devworkstation ls -la /dev/uinput`
+- Check permissions: `docker exec workspace ls -la /dev/uinput`
 
 **Can't pair / No PIN shown:**
 - Access web UI: https://localhost:47990
@@ -321,5 +321,5 @@ docker exec devworkstation tail -f /home/dev/.config/sunshine/sunshine.log
 
 **View Sunshine logs:**
 ```powershell
-docker exec devworkstation tail -100 /home/dev/.config/sunshine/sunshine.log
+docker exec workspace tail -100 /home/dev/.config/sunshine/sunshine.log
 ```

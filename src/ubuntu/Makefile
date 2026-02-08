@@ -28,57 +28,57 @@ help:
 
 # Build the image
 build:
-	docker-compose build
+	docker compose build
 
 # Start the container
 up:
-	docker-compose up -d
+	docker compose up -d
 	@echo ""
 	@echo "✓ Container started!"
 	@make rdp
 
 # Stop the container
 down:
-	docker-compose down
+	docker compose down
 
 # Restart the container
 restart:
-	docker-compose restart
+	docker compose restart
 	@echo "✓ Container restarted!"
 
 # View logs
 logs:
-	docker-compose logs -f --tail=100
+	docker compose logs -f --tail=100
 
 # Open bash shell
 shell:
-	docker-compose exec dev-desktop bash
+	docker compose exec workspace bash
 
 # Execute arbitrary command
 exec:
-	docker-compose exec dev-desktop $(CMD)
+	docker compose exec workspace $(CMD)
 
 # Stop and remove everything including volumes
 clean:
 	@echo "⚠️  This will delete all data in the container!"
 	@echo "Press Ctrl+C to cancel, or wait 5 seconds to continue..."
 	@timeout /t 5 /nobreak > nul 2>&1 || sleep 5
-	docker-compose down -v
+	docker compose down -v
 	@echo "✓ Cleaned up!"
 
 # Rebuild from scratch
 rebuild: clean
-	docker-compose build --no-cache
-	docker-compose up -d
+	docker compose build --no-cache
+	docker compose up -d
 	@echo "✓ Rebuild complete!"
 
 # Show status
 status:
-	@docker-compose ps
+	@docker compose ps
 
 # Show health
 health:
-	@docker inspect --format='{{.State.Health.Status}}' dev-desktop 2>nul || echo "Container not running"
+	@docker inspect --format='{{.State.Health.Status}}' workspace 2>nul || echo "Container not running"
 
 # Show RDP connection info
 rdp:
