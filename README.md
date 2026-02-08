@@ -20,8 +20,6 @@ Then connect via:
 
 **📖 [Full Documentation →](src/ubuntu/README.md)**
 
----
-
 ## 📦 What's Inside
 
 ### [src/ubuntu](src/ubuntu/) - Developer Workstation Container
@@ -75,8 +73,6 @@ kubectl apply -f k8s/devworkstation.yaml
 
 **Note:** Sunshine on Windows Docker Desktop has a networking limitation causing 10-second timeouts. Works perfectly on Linux Docker Engine and Kubernetes.
 
----
-
 ## 🎯 Use Cases
 
 ### Bypass IT Restrictions
@@ -94,8 +90,6 @@ Share the exact same development environment across your entire team via contain
 ### Cloud Development
 Deploy development workstations to cloud VMs or Kubernetes clusters for powerful remote coding.
 
----
-
 ## 📋 Requirements
 
 - **Local:**
@@ -112,8 +106,6 @@ Deploy development workstations to cloud VMs or Kubernetes clusters for powerful
   - K8s cluster with NVIDIA GPU Operator (for GPU support)
   - Persistent Volume support
   - NodePort or LoadBalancer service
-
----
 
 ## 🔧 Configuration
 
@@ -141,15 +133,11 @@ NVIDIA_VISIBLE_DEVICES=all
 NVIDIA_DRIVER_CAPABILITIES=all
 ```
 
----
-
 ## 📚 Documentation
 
 - **[Ubuntu Dev Workstation](src/ubuntu/README.md)** - Complete feature guide
 - **[Sunshine/Moonlight Setup](src/ubuntu/SUNSHINE_SETUP.md)** - GPU streaming setup
 - **[Migration Guide](src/ubuntu/MIGRATION.md)** - Upgrading from old structure
-
----
 
 ## 🔐 Security Best Practices
 
@@ -159,8 +147,6 @@ NVIDIA_DRIVER_CAPABILITIES=all
 4. **Use SSH keys** - Disable password authentication for SSH
 5. **Bind services to VPN interface** - Limit access to trusted networks only
 6. **Regular updates** - `docker compose pull && docker compose up -d`
-
----
 
 ## 🛠️ Common Commands
 
@@ -218,8 +204,6 @@ kubectl get svc -n devworkstations
 # Connect to NodePort or LoadBalancer IP
 ```
 
----
-
 ## 🚀 What Makes This Special?
 
 ### GPU-Accelerated Streaming ✨
@@ -242,8 +226,6 @@ Three-layer compose file structure for maximum flexibility:
 - Healthchecks and readiness probes
 - Resource limits and reservations
 - Security contexts and capabilities
-
----
 
 ## 🐛 Troubleshooting
 
@@ -281,8 +263,6 @@ This is a **known limitation** with Docker Desktop on Windows bridge networking.
 
 See [SUNSHINE_SETUP.md](src/ubuntu/SUNSHINE_SETUP.md) for details.
 
----
-
 ## 📊 Performance Benchmarks
 
 **Software Encoding (x264):**
@@ -295,8 +275,6 @@ See [SUNSHINE_SETUP.md](src/ubuntu/SUNSHINE_SETUP.md) for details.
 - 2560x1440 @ 120 FPS: ✅ Excellent
 - 3440x1440 @ 60 FPS: ✅ Great
 - 5120x1440 @ 60-120 FPS: ✅ Works! (100+ Mbps bitrate)
-
----
 
 ## 🤝 Contributing
 
@@ -312,15 +290,11 @@ Please also review our [Code of Conduct](CODE_OF_CONDUCT.md) - we are committed 
 
 Issues and pull requests are welcome!
 
----
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 Use freely for personal or commercial projects.
-
----
 
 ## 🙏 Acknowledgments
 
@@ -332,16 +306,12 @@ Built with:
 - Docker & Docker Compose
 - Kubernetes
 
----
-
 ## 🎓 Learn More
 
 - **Sunshine Documentation:** https://docs.lizardbyte.dev/projects/sunshine/
 - **Moonlight Client:** https://moonlight-stream.org/
 - **X2Go:** https://wiki.x2go.org/
 - **Docker GPU Support:** https://docs.docker.com/config/containers/resource_constraints/#gpu
-
----
 
 **Built to Free Developers from IT Restrictions** 🚀
 
