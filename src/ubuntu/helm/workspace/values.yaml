@@ -1,0 +1,43 @@
+image:
+  repository: ghcr.io/dever-labs/workspace
+  tag: ubuntu-24.02
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  ports:
+    rdp:
+      port: 3389
+      nodePort: 30389
+    ssh:
+      port: 22
+      nodePort: 30222
+
+env:
+  timezone: UTC
+  enableSsh: "true"
+
+auth:
+  devPassword: dev
+  gitUserName: ""
+  gitUserEmail: ""
+
+resources:
+  requests:
+    cpu: "4"
+    memory: 8Gi
+  limits:
+    cpu: "8"
+    memory: 16Gi
+    nvidiaGpu: "1"
+
+persistent:
+  home:
+    size: 20Gi
+    storageClassName: ""
+  workspace:
+    size: 20Gi
+    storageClassName: ""
+
+shm:
+  size: 2Gi

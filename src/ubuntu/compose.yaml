@@ -35,11 +35,9 @@ services:
       - GIT_USER_NAME=${GIT_USER_NAME:-}
       - GIT_USER_EMAIL=${GIT_USER_EMAIL:-}
     
-    # Persistent volumes
     volumes:
       - dev-home:/home/dev
       - workspace:/workspace
-      # Caches for faster builds
       - nuget-cache:/home/dev/.nuget
       - npm-cache:/home/dev/.npm
       - pip-cache:/home/dev/.cache/pip
@@ -86,3 +84,4 @@ volumes:
     driver: local
   cargo-cache:
     driver: local
+

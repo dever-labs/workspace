@@ -113,10 +113,6 @@ spec:
           mountPath: /home/dev
         - name: workspace
           mountPath: /workspace
-        - name: nuget-cache
-          mountPath: /home/dev/.nuget
-        - name: npm-cache
-          mountPath: /home/dev/.npm
         - name: shm
           mountPath: /dev/shm
         securityContext:
@@ -148,25 +144,11 @@ spec:
       accessModes: ["ReadWriteOnce"]
       resources:
         requests:
-          storage: 50Gi
+          storage: 20Gi
   - metadata:
       name: workspace
     spec:
       accessModes: ["ReadWriteOnce"]
       resources:
         requests:
-          storage: 100Gi
-  - metadata:
-      name: nuget-cache
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      resources:
-        requests:
-          storage: 10Gi
-  - metadata:
-      name:npm-cache
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      resources:
-        requests:
-          storage: 10Gi
+          storage: 20Gi

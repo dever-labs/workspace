@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: workspace
+spec:
+  serviceName: workspace
+  replicas: 1
+  selector:
+    matchLabels:
+      app: workspace
+  template:
+    metadata:
+      labels:
+        app: workspace
+    spec:
+      containers:
+        - name: workspace
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: USERNAME
+              value: "dev"
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: workspace-secret
+                  key: DEV_PASSWORD
+            - name: TZ
+              valueFrom:
+                configMapKeyRef:
+                  name: workspace-config
+                  key: TZ
+            - name: ENABLE_SSH
+              valueFrom:
+                configMapKeyRef:
+                  name: workspace-config
+                  key: ENABLE_SSH
+            - name: GIT_USER_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: workspace-secret
+                  key: GIT_USER_NAME
+            - name: GIT_USER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: workspace-secret
+                  key: GIT_USER_EMAIL
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "all"
+          ports:
+            - containerPort: 3389
+              name: rdp
+            - containerPort: 22
+              name: ssh
+          resources:
+            requests:
+              cpu: {{ .Values.resources.requests.cpu | quote }}
+              memory: {{ .Values.resources.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.resources.limits.cpu | quote }}
+              memory: {{ .Values.resources.limits.memory | quote }}
+              nvidia.com/gpu: {{ .Values.resources.limits.nvidiaGpu | quote }}
+          volumeMounts:
+            - name: dev-home
+              mountPath: /home/dev
+            - name: workspace
+              mountPath: /workspace
+            - name: shm
+              mountPath: /dev/shm
+          securityContext:
+            capabilities:
+              add:
+                - SYS_ADMIN
+          livenessProbe:
+            exec:
+              command:
+                - pgrep
+                - -x
+                - xrdp
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: 3389
+            initialDelaySeconds: 20
+            periodSeconds: 10
+      volumes:
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: {{ .Values.shm.size }}
+  volumeClaimTemplates:
+    - metadata:
+        name: dev-home
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if .Values.persistent.home.storageClassName }}
+        storageClassName: "{{ .Values.persistent.home.storageClassName }}"
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.persistent.home.size }}
+    - metadata:
+        name: workspace
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if .Values.persistent.workspace.storageClassName }}
+        storageClassName: "{{ .Values.persistent.workspace.storageClassName }}"
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.persistent.workspace.size }}

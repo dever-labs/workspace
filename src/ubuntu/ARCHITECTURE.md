@@ -4,31 +4,31 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      Windows Host                            │
-│                                                              │
-│  ┌────────────────┐         ┌──────────────────┐           │
-│  │  RDP Client    │◄────────┤  Docker Desktop  │           │
-│  │  (mstsc.exe)   │  :3389  │                  │           │
-│  └────────────────┘         │  ┌────────────────────────┐  │
+│                      Windows Host                           │
+│                                                             │
+│  ┌────────────────┐          ┌──────────────────┐           │
+│  │  RDP Client    │◄─────────┤  Docker Desktop  │           │
+│  │  (mstsc.exe)   │  :3389   │                  │           │
+│  └────────────────┘          │  ┌────────────────────────┐  │
 │                              │  │  Ubuntu Container      │  │
-│  ┌────────────────┐         │  │                        │  │
-│  │  Windows Files │◄────────┼──┤  /workspace (mount)    │  │
-│  │  (Projects)    │  Volume │  │                        │  │
-│  └────────────────┘         │  │  ┌──────────────────┐  │  │
+│  ┌────────────────┐          │  │                        │  │
+│  │  Windows Files │◄─────────┼──┤  /workspace (mount)    │  │
+│  │  (Projects)    │  Volume  │  │                        │  │
+│  └────────────────┘          │  │  ┌──────────────────┐  │  │
 │                              │  │  │  XFCE Desktop    │  │  │
-│  ┌────────────────┐         │  │  │                  │  │  │
-│  │  Docker Socket │◄────────┼──┤  │  • Terminal      │  │  │
-│  │                │  Mount  │  │  │  • Editors       │  │  │
-│  └────────────────┘         │  │  │  • Browsers      │  │  │
+│  ┌────────────────┐          │  │  │                  │  │  │
+│  │  Docker Socket │◄─────────┼──┤  │  • Terminal      │  │  │
+│  │                │  Mount   │  │  │  • Editors       │  │  │
+│  └────────────────┘          │  │  │  • Browsers      │  │  │
 │                              │  │  │  • Dev Tools     │  │  │
 │                              │  │  └──────────────────┘  │  │
 │                              │  │                        │  │
 │                              │  │  Services:             │  │
-│                              │  │  • xrdp (RDP)         │  │
-│                              │  │  • SSH (optional)     │  │
-│                              │  │  • Docker CLI         │  │
+│                              │  │  • xrdp (RDP)          │  │
+│                              │  │  • SSH (optional)      │  │
+│                              │  │  • Docker CLI          │  │
 │                              │  └────────────────────────┘  │
-│                              └──────────────────────────────┘
+│                              └──────────────────┘           |
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -119,7 +119,7 @@ Container Runtime:
 ├── workspace/             # Project directory
 └── .xsession             # Desktop session config
 
-/workspace/                # Windows project mount
+/workspace/                # Workspace volume
 /etc/container-startup.d/  # Custom startup scripts
 /var/log/                  # System logs (xrdp, syslog, auth)
 ```

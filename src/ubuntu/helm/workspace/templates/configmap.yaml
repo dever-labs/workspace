@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: workspace-config
+data:
+  TZ: "{{ .Values.env.timezone }}"
+  ENABLE_SSH: "{{ .Values.env.enableSsh }}"

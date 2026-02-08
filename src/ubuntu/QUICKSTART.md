@@ -63,16 +63,15 @@ Via Shell from Windows:
 # Then run commands inside
 ```
 
-### Access Your Windows Files
+### Get Your Code
 
-Your configured workspace appears at:
-- `/workspace` - Direct mount
-- `~/workspace-shared` - Symlink for convenience
+This environment assumes your source of truth lives in GitHub/GitLab (or similar). The container can be rebuilt at any time, so keep work committed and pushed regularly.
 
-Example:
+Clone from your remote repo inside the container:
+
 ```bash
 cd /workspace
-ls  # See your Windows files
+git clone <your-repo-url>
 ```
 
 ### Use Docker Inside Container
@@ -134,9 +133,11 @@ Access from Windows browser:
 
 ### Persist Data
 
+Docker uses named volumes created at startup (no host bind mounts). Data persists across container restarts, but the expectation is that containers are killable and replaceable without losing important data. Keep source of truth in GitHub/GitLab or other cloud storage.
+
 **Automatically persisted:**
 - Everything in `/home/dev`
-- Your workspace (Windows mount)
+- `/workspace`
 
 **Not persisted (ephemeral):**
 - System files

@@ -44,8 +44,8 @@ services:
     privileged: true
     environment:
       - DOCKER_TLS_CERTDIR=
-    volumes:
-      - docker-dind-data:/var/lib/docker
+    tmpfs:
+      - /var/lib/docker
     networks:
       - devnet
 
@@ -53,6 +53,3 @@ networks:
   devnet:
     driver: bridge
 
-volumes:
-  docker-dind-data:
-    driver: local

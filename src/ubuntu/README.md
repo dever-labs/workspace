@@ -9,7 +9,7 @@ A containerized Linux development environment with full desktop (XFCE), optimize
 - ✅ **Multiple Access Methods** - RDP, SSH, X2Go, or Sunshine/Moonlight
 - ✅ **JetBrains IDEs Ready** - Optimized for Rider, WebStorm, IntelliJ IDEA
 - ✅ **Docker-in-Docker** - Run containers within the workspace
-- ✅ **Persistent Storage** - Home directory and caches preserved across restarts
+- ✅ **Named Volumes** - Data persists across restarts, no host bind mounts
 - ✅ **Flexible Deployment** - Local Docker Desktop, Remote VM, or Kubernetes
 
 ## Quick Start
@@ -94,9 +94,12 @@ docker --context remote compose -f compose.yaml -f compose.remote.yaml up -d
 
 Deploy to K8s cluster for enterprise scenarios.
 
+**Helm (recommended):**
 ```bash
-# Deploy
-kubectl apply -f k8s/workspace.yaml
+# Install with PVC sizes
+helm install workspace ./helm/workspace -n workspace --create-namespace \
+    --set persistent.home.size=20Gi \
+    --set persistent.workspace.size=20Gi
 
 # Get access info
 kubectl get svc -n workspace
@@ -105,8 +108,13 @@ kubectl get svc -n workspace
 mstsc /v:<node-ip>:30389
 ```
 
+**Manifest (defaults to 20Gi PVCs):**
+```bash
+kubectl apply -f k8s/workspace.yaml
+```
+
 **Features:**
-- StatefulSet with persistent volumes
+- StatefulSet with PVCs for `/home/dev` and `/workspace`
 - GPU support via NVIDIA GPU Operator
 - ConfigMap/Secret for configuration
 - NodePort or LoadBalancer service
@@ -180,15 +188,10 @@ NVIDIA_VISIBLE_DEVICES=all
 - **X2Go:** Better performance (10-30ms), requires X2Go client application
 - **Sunshine/Moonlight (recommended):** Best performance (5-15ms, 60 FPS), Sunshine runs in container with GPU encoding, connect with Moonlight client
 
-### Persistent Data
+### Ephemeral vs. Persistent
 
-Volumes for data persistence:
-- `dev-home` - User home directory (`/home/dev`)
-- `workspace` - Shared workspace (`/workspace`)
-- `nuget-cache` - .NET package cache
-- `npm-cache` - Node.js package cache
-- `pip-cache` - Python package cache
-- `cargo-cache` - Rust package cache
+- **Docker (local/remote):** Uses named volumes created at startup (no host bind mounts). Data persists across restarts, but containers are expected to be disposable.
+- **Kubernetes:** Uses PVCs for `/home/dev` and `/workspace`. Size is configurable (see Helm section below).
 
 ## Installed Tools
 
@@ -275,15 +278,6 @@ git config --global user.name "Your Name"
 git config --global user.email "your.email@example.com"
 ```
 
-### Mount Local Code
-
-Add to `compose.override.yaml`:
-
-```yaml
-volumes:
-  - /path/to/your/code:/workspace/projects
-```
-
 ### Docker-in-Docker
 
 ```bash
@@ -296,15 +290,8 @@ docker compose up
 
 ### Backup/Restore
 
-```bash
-# Backup home directory
-docker run --rm -v dev-home:/data -v $(pwd):/backup alpine \
-  tar czf /backup/home-backup.tar.gz -C /data .
-
-# Restore
-docker run --rm -v dev-home:/data -v $(pwd):/backup alpine \
-  sh -c "cd /data && tar xzf /backup/home-backup.tar.gz"
-```
+- **Docker:** Named volumes keep data across restarts, but containers are disposable. Store source of truth in remote Git or cloud storage.
+- **Kubernetes:** Back up PVCs using your cluster's storage tools.
 
 ## Troubleshooting
 
