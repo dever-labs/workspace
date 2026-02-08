@@ -1,4 +1,17 @@
-.PHONY: help build up down restart logs shell exec clean rebuild status health
+.PHONY: help build up down restart logs shell exec clean rebuild status health rdp k8s-apply k8s-delete helm-install helm-upgrade
+
+RDP_HOST ?= localhost
+RDP_PORT ?= 3389
+RDP_USER ?= dev
+K8S_NAMESPACE ?= workspace
+HELM_CHART ?= ./helm/workspace
+HELM_RELEASE ?= workspace
+
+ifeq ($(OS),Windows_NT)
+SLEEP_CMD = powershell -NoProfile -Command "Start-Sleep -Seconds 5"
+else
+SLEEP_CMD = sleep 5
+endif
 
 # Default target
 help:
@@ -19,6 +32,10 @@ help:
 	@echo "  status    - Show container status"
 	@echo "  health    - Show container health"
 	@echo "  rdp       - Show RDP connection info"
+	@echo "  k8s-apply - Apply Kubernetes manifest"
+	@echo "  k8s-delete - Delete Kubernetes manifest"
+	@echo "  helm-install - Install Helm chart (use SIZE_HOME/SIZE_WORKSPACE)"
+	@echo "  helm-upgrade - Upgrade Helm chart (use SIZE_HOME/SIZE_WORKSPACE)"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make up              - Start the dev environment"
@@ -56,13 +73,14 @@ shell:
 
 # Execute arbitrary command
 exec:
+	$(if $(strip $(CMD)),,$(error Usage: make exec CMD='your command'))
 	docker compose exec workspace $(CMD)
 
 # Stop and remove everything including volumes
 clean:
 	@echo "⚠️  This will delete all data in the container!"
 	@echo "Press Ctrl+C to cancel, or wait 5 seconds to continue..."
-	@timeout /t 5 /nobreak > nul 2>&1 || sleep 5
+	@$(SLEEP_CMD)
 	docker compose down -v
 	@echo "✓ Cleaned up!"
 
@@ -85,13 +103,35 @@ rdp:
 	@echo "═══════════════════════════════════════"
 	@echo "  RDP Connection Information"
 	@echo "═══════════════════════════════════════"
-	@echo "  Host:     localhost"
-	@echo "  Port:     3389"
-	@echo "  Username: dev"
+	@echo "  Host:     $(RDP_HOST)"
+	@echo "  Port:     $(RDP_PORT)"
+	@echo "  Username: $(RDP_USER)"
 	@echo "  Password: (check your .env file)"
 	@echo "═══════════════════════════════════════"
 	@echo ""
 	@echo "To connect:"
 	@echo "  1. Open Remote Desktop Connection (mstsc.exe)"
-	@echo "  2. Enter: localhost:3389"
+	@echo "  2. Enter: $(RDP_HOST):$(RDP_PORT)"
 	@echo "  3. Login with credentials above"
+
+# Kubernetes (manifest)
+k8s-apply:
+	kubectl apply -f k8s/workspace.yaml
+
+k8s-delete:
+	kubectl delete -f k8s/workspace.yaml
+
+# Kubernetes (Helm)
+helm-install:
+	$(if $(strip $(SIZE_HOME)),,$(error Usage: make helm-install SIZE_HOME=20Gi SIZE_WORKSPACE=20Gi))
+	$(if $(strip $(SIZE_WORKSPACE)),,$(error Usage: make helm-install SIZE_HOME=20Gi SIZE_WORKSPACE=20Gi))
+	helm install $(HELM_RELEASE) $(HELM_CHART) -n $(K8S_NAMESPACE) --create-namespace \
+	  --set persistent.home.size=$(SIZE_HOME) \
+	  --set persistent.workspace.size=$(SIZE_WORKSPACE)
+
+helm-upgrade:
+	$(if $(strip $(SIZE_HOME)),,$(error Usage: make helm-upgrade SIZE_HOME=20Gi SIZE_WORKSPACE=20Gi))
+	$(if $(strip $(SIZE_WORKSPACE)),,$(error Usage: make helm-upgrade SIZE_HOME=20Gi SIZE_WORKSPACE=20Gi))
+	helm upgrade $(HELM_RELEASE) $(HELM_CHART) -n $(K8S_NAMESPACE) \
+	  --set persistent.home.size=$(SIZE_HOME) \
+	  --set persistent.workspace.size=$(SIZE_WORKSPACE)
