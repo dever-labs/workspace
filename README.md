@@ -300,7 +300,15 @@ See [SUNSHINE_SETUP.md](src/ubuntu/SUNSHINE_SETUP.md) for details.
 
 ## 🤝 Contributing
 
-Issues and pull requests welcome! This is a living project that evolves with development needs.
+We welcome contributions! Whether you're fixing bugs, adding features, or improving documentation, your help is appreciated.
+
+Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on:
+- How to report issues
+- How to suggest features
+- Development setup and guidelines
+- Pull request process
+
+Issues and pull requests are welcome!
 
 ---
 
