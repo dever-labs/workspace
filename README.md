@@ -306,7 +306,9 @@ Issues and pull requests welcome! This is a living project that evolves with dev
 
 ## 📄 License
 
-MIT License - Use freely for personal or commercial projects.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+Use freely for personal or commercial projects.
 
 ---
 
