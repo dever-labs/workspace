@@ -3,7 +3,7 @@
 entrypoint.sh text eol=lf
 
 # Docker files
-Dockerfile text eol=lf
+Dockerfile* text eol=lf
 compose*.yaml text eol=lf
 
 # Markdown and documentation

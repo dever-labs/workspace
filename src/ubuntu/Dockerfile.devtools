@@ -3,15 +3,13 @@ FROM ghcr.io/dever-labs/workspace:ubuntu-24.02
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl gnupg lsb-release \
-    libfuse2 libgbm1 libgtk-3-0 libnss3 libxss1 libasound2 \
- && install -m 0755 -d /etc/apt/keyrings \
- && curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg \
- && chmod a+r /etc/apt/keyrings/microsoft.gpg \
- && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list \
- && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/ms-teams stable main" > /etc/apt/sources.list.d/teams.list \
+    libfuse2t64 libgbm1 libgtk-3-0t64 libnss3 libxss1 libasound2t64 \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install .NET 10 SDK using existing Microsoft key from base image
+RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/ubuntu/24.04/prod noble main" > /etc/apt/sources.list.d/microsoft-prod.list \
  && apt-get update \
- && apt-get install -y --no-install-recommends code teams \
+ && apt-get install -y --no-install-recommends dotnet-sdk-10.0 \
  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ARG RIDER_VERSION=2025.3.2
@@ -20,6 +18,76 @@ RUN mkdir -p /opt/rider \
  && tar -xzf /tmp/rider.tar.gz -C /opt/rider --strip-components=1 \
  && rm /tmp/rider.tar.gz \
  && ln -sf /opt/rider/bin/rider.sh /usr/local/bin/rider
+
+ARG WEBSTORM_VERSION=2025.3.2
+RUN mkdir -p /opt/webstorm \
+ && curl -fsSL "https://download.jetbrains.com/webstorm/WebStorm-${WEBSTORM_VERSION}.tar.gz" -o /tmp/webstorm.tar.gz \
+ && tar -xzf /tmp/webstorm.tar.gz -C /opt/webstorm --strip-components=1 \
+ && rm /tmp/webstorm.tar.gz \
+ && ln -sf /opt/webstorm/bin/webstorm.sh /usr/local/bin/webstorm
+
+# Application menu entries
+RUN mkdir -p /usr/share/applications
+RUN cat > /usr/share/applications/rider.desktop <<'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Rider
+Comment=JetBrains Rider - .NET IDE
+Exec=/usr/local/bin/rider %f
+Icon=/opt/rider/bin/rider.svg
+Categories=Development;IDE;
+StartupWMClass=jetbrains-rider
+Terminal=false
+EOF
+RUN cat > /usr/share/applications/webstorm.desktop <<'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=WebStorm
+Comment=JetBrains WebStorm - JavaScript IDE
+Exec=/usr/local/bin/webstorm %f
+Icon=/opt/webstorm/bin/webstorm.svg
+Categories=Development;IDE;
+StartupWMClass=jetbrains-webstorm
+Terminal=false
+EOF
+RUN cat > /usr/share/applications/teams-web.desktop <<'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Microsoft Teams
+Comment=Microsoft Teams (Web)
+Exec=xdg-open https://teams.microsoft.com
+Icon=teams
+Categories=Network;InstantMessaging;
+Terminal=false
+EOF
+RUN update-desktop-database /usr/share/applications
+
+# Startup script to create desktop icons at runtime (home dir is a volume, so build-time writes are lost)
+RUN cat > /etc/container-startup.d/jetbrains-desktop.sh <<'EOF'
+#!/bin/bash
+mkdir -p /home/dev/Desktop /home/dev/.config/autostart
+
+cp /usr/share/applications/rider.desktop /home/dev/Desktop/rider.desktop
+cp /usr/share/applications/webstorm.desktop /home/dev/Desktop/webstorm.desktop
+cp /usr/share/applications/teams-web.desktop /home/dev/Desktop/teams-web.desktop
+
+# Autostart to mark icons trusted so XFCE 4.18+ doesn't show a trust dialog (which blocks input)
+cat > /home/dev/.config/autostart/trust-desktop-icons.desktop <<'AUTOEOF'
+[Desktop Entry]
+Type=Application
+Name=Trust Desktop Icons
+Exec=bash -c 'gio set /home/dev/Desktop/rider.desktop metadata::trusted true; gio set /home/dev/Desktop/webstorm.desktop metadata::trusted true; gio set /home/dev/Desktop/teams-web.desktop metadata::trusted true'
+Hidden=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
+AUTOEOF
+
+chown -R dev:dev /home/dev/Desktop /home/dev/.config/autostart
+EOF
+RUN chmod +x /etc/container-startup.d/jetbrains-desktop.sh
 
 RUN TOOLBOX_JSON="$(curl -fsSL "https://data.services.jetbrains.com/products/releases?code=TBA&latest=true&type=release")" \
  && TOOLBOX_URL="$(printf "%s" "$TOOLBOX_JSON" | jq -r '.TBA[0].downloads.linux.link // empty')" \

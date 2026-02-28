@@ -3,7 +3,7 @@ services:
   workspace:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.devtools
     image: ghcr.io/dever-labs/workspace:ubuntu-24.02
     container_name: workspace
     hostname: workspace
