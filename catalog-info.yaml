@@ -1,0 +1,24 @@
+# Describes this repository in devhub (https://hub.dever.dk), dever-labs'
+# developer portal. devhub's GitHub discovery reads this file from the
+# default branch.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: workspace
+  namespace: devtools
+  title: Workspace
+  description: >
+    Containerized Ubuntu 24.04 XFCE developer workstation (src/ubuntu) with
+    GPU-accelerated remote access (RDP, Sunshine/Moonlight, SSH/X2Go), for
+    Docker Desktop, a remote VM or Kubernetes.
+  annotations:
+    github.com/project-slug: dever-labs/workspace
+  tags: [docker, kubernetes, helm]
+  links:
+    - url: https://github.com/dever-labs/workspace/blob/main/src/ubuntu/README.md
+      title: Workstation docs
+spec:
+  type: tool
+  lifecycle: experimental
+  owner: group:devtools/engineering
+  system: system:devtools/dev-environments
